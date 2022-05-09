@@ -42,6 +42,9 @@ public final class Test {
         fooParser.parse();
         try {
             System.out.println(JsonJavaBridge.cast(Foo.class, fooParser.result()));
+            fooParser.reset(Files.openAsUtf(new File("./bar.json")));
+            fooParser.parse();
+            System.out.println(JsonJavaBridge.cast(Bar.class, fooParser.result()));
         } catch (InvocationTargetException | NoSuchMethodException | InstantiationException | IllegalAccessException | NoSuchFieldException e) {
             e.printStackTrace();
         }
@@ -62,6 +65,22 @@ public final class Test {
         public String toString () {
             return "Foo{" +
                     "bar=" + bar +
+                    '}';
+        }
+    }
+
+    private static class Bar extends Foo {
+        int foo = 1919810;
+
+        public Bar (int bar) {
+            super(bar);
+        }
+
+        @Override
+        public String toString () {
+            return "Bar{" +
+                    "bar=" + bar +
+                    ", foo=" + foo +
                     '}';
         }
     }

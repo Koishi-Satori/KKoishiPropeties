@@ -28,7 +28,6 @@ public final class MappedJsonObject {
                 mjo.data.put(datum.getFirst(), datum.getSecond());
             }
         }
-        System.out.println("Cast finished:" + mjo);
         return mjo;
     }
 

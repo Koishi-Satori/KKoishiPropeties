@@ -3,6 +3,7 @@ package top.kkoishi.proc.json;
 import sun.misc.Unsafe;
 import top.kkoishi.proc.property.BuildFailedException;
 
+import java.io.File;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
@@ -103,9 +104,7 @@ public final class JsonJavaBridge {
         }
         final T inst = (T) sharedUnsafe.allocateInstance(clz);
         for (final Map.Entry<String, Object> jsonEntry : jsonObject.entrySet()) {
-            final Field f = clz.getDeclaredField(jsonEntry.getKey());
-            //debug use
-            System.out.println("Access field:" + f);
+            final Field f = findField(clz, jsonEntry.getKey());
             f.setAccessible(true);
             final long offset = sharedUnsafe.objectFieldOffset(f);
             if (jsonEntry.getValue() instanceof final MappedJsonObject cpy) {
@@ -115,6 +114,20 @@ public final class JsonJavaBridge {
             }
         }
         return inst;
+    }
+
+    public static Field findField (Class<?> clz, String name) throws NoSuchFieldException {
+        Field f;
+        try {
+            f = clz.getDeclaredField(name);
+            return f;
+        } catch (NoSuchFieldException e) {
+            final Class<?> superClz = clz.getSuperclass();
+            if (superClz == Object.class) {
+                throw e;
+            }
+            return findField(superClz, name);
+        }
     }
 
     private static <T> void trySetField (T inst, long offset, Object o, Object value, Class<?> clz) {
@@ -143,7 +156,7 @@ public final class JsonJavaBridge {
         }
         final Object inst = sharedUnsafe.allocateInstance(clz);
         for (final Map.Entry<String, Object> jsonEntry : jsonObject.entrySet()) {
-            final Field f = clz.getDeclaredField(jsonEntry.getKey());
+            final Field f = findField(clz, jsonEntry.getKey());
             f.setAccessible(true);
             final long offset = sharedUnsafe.objectFieldOffset(f);
             if (jsonEntry.getValue() instanceof final MappedJsonObject cpy) {
