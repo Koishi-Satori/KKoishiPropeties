@@ -217,7 +217,6 @@ public class JsonParser {
             Entry temp = null;
             while (!tokens.isEmpty()) {
                 final var token = tokens.remove();
-                System.out.println("Translating token:" + token);
                 switch (token.type) {
                     case STRING: {
                         if (temp != null) {
@@ -373,9 +372,8 @@ public class JsonParser {
         builder.setTokens(new TokenList());
         lookForward();
         block(this);
-        //debug use.
-        this.builder.tokens.forEach(System.out::println);
-        System.out.println(this.builder.tokens.isEmpty());
+//        //debug use.
+//        this.builder.tokens.forEach(System.out::println);
         this.builder.build();
     }
 

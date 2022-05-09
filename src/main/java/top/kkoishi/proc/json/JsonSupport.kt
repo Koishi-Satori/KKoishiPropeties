@@ -3,6 +3,9 @@ package top.kkoishi.proc.json
 import sun.misc.Unsafe
 import top.kkoishi.proc.property.BuildFailedException
 import top.kkoishi.proc.property.TokenizeException
+import java.lang.NumberFormatException
+import java.lang.System.err
+import java.math.BigDecimal
 import java.math.BigInteger
 import kotlin.Comparator
 import kotlin.collections.ArrayList
@@ -12,6 +15,8 @@ val INT_MAX = BigInteger("7fffffff", 16)
 val INT_MIN = BigInteger("80000000", 16)
 val LONG_MAX = BigInteger("9223372036854775807")
 val LONG_MIN = BigInteger("-9223372036854775808")
+val DOUBLE_MAX = BigDecimal(Double.MAX_VALUE)
+val DOUBLE_MIN = BigDecimal(Double.MIN_VALUE)
 val NUMBER_MAP = HashSet<Char>(listOf('-', '_', '.', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0'))
 val UNSAFE: Unsafe = accessUnsafe()
 
@@ -219,113 +224,58 @@ class Entry(var key: String, var value: Any?) {
     }
 }
 
-internal data class JsonBuilderInfo<T>(private val clz: Class<T>, private val fieldsInfo: ArrayList<JsonBuilderInfo<Any?>>?)
+class JsonBuildInfo<T>(val clz: Class<T>) {
+    enum class JsonInfoType {
+        INT, FLOAT, SHORT, LONG, DOUBLE, BOOLEAN, STRING, BYTE, CLASS, ARRAY
+    }
+
+    data class FieldRef (val type: JsonInfoType, val clz: Class<Any?>?, val name: String)
+
+    private val fields: ArrayList<FieldRef> = ArrayList()
+
+    fun addField(fieldRef: FieldRef) {
+        fields.add(fieldRef)
+    }
+
+    @JvmName("fields")
+    fun getFields(): ArrayList<FieldRef> {
+        return fields
+    }
+}
 
 internal fun getStringIterator(content: String): Iterator<Char> {
     return content.toCharArray().iterator()
 }
 
-@Throws(java.lang.ClassCastException::class)
+@Throws(java.lang.ClassCastException::class, NumberFormatException::class)
 @Suppress("UNCHECKED_CAST")
 internal fun <T> jsonTokenCast(token: JsonParser.Token): T {
     return when (token.type) {
         JsonParser.JsonType.STRING -> token.value as T
         JsonParser.JsonType.NUMBER -> {
-            val integer = BigInteger(token.value)
-            if (token.value.elementAt(0) == '-') {
-                if (integer > INT_MAX) {
-                    if (integer > LONG_MAX) integer else token.value.toLong()
-                } else token.value.toInt()
+            if (token.value.contains('.')) {
+                val decimal = BigDecimal(token.value)
+                if (token.value.elementAt(0) != '-') {
+                    if (decimal > DOUBLE_MAX) decimal else decimal.toDouble()
+                } else {
+                    if (decimal < DOUBLE_MIN) decimal else decimal.toDouble()
+                }
             } else {
-                if (integer < INT_MIN) {
-                    if (integer < LONG_MIN) integer else token.value.toLong()
-                } else token.value.toInt()
+                val integer = BigInteger(token.value)
+                if (token.value.elementAt(0) != '-') {
+                    if (integer > INT_MAX) {
+                        if (integer > LONG_MAX) integer else token.value.toLong()
+                    } else token.value.toInt()
+                } else {
+                    if (integer < INT_MIN) {
+                        if (integer < LONG_MIN) integer else token.value.toLong()
+                    } else token.value.toInt()
+                }
             } as T
         }
         JsonParser.JsonType.BOOLEAN -> {
             (token.value == "0") as T
         }
         else -> throw ClassCastException("The token type ${token.type} cannot be force casted.")
-    }
-}
-
-class BplusTree<T>(private var comparator: Comparator<T>) {
-    private class Node<T>() {
-        var value: T? = null
-        var elementAmount: Int = 0
-        var children: Array<Node<T>?>? = Array(5) { null }
-        var isLeaf: Boolean = false
-
-        constructor(value: T?) : this() {
-            this.value = value
-        }
-    }
-
-    private var root: Node<T>? = null
-
-    private fun insert0(node: Node<T>, value: T?) {
-        if (node.value == null) {
-            node.value = value
-            node.children = null
-            val refNode = Node(value)
-            refNode.isLeaf = true
-            return
-        } else {
-            node.children = Array(5) { null }
-            node.children!![node.elementAmount++] = node
-            var cursor: Node<T>? = node
-            while (!cursor!!.isLeaf) {
-                for (index in cursor!!.children!!.indices) {
-                    if (comparator.compare(value, node.children!![index]!!.value) < 0) {
-                        cursor = cursor.children!![index]
-                        break
-                    }
-                    if (index == node.children!!.size - 1) {
-                        cursor = cursor.children!![index + 1]
-                        break
-                    }
-                }
-            }
-            if (cursor.elementAmount < 5) {
-                insertVal(cursor, value)
-                cursor.children!![cursor.elementAmount] = cursor.children!![cursor.elementAmount - 1]
-                cursor.children!![cursor.elementAmount - 1] = null
-            } else {
-                split(cursor, value)
-            }
-        }
-    }
-
-    /**
-     * Find the position to insert the value to the node array
-     * and insert the value to the node array.
-     *
-     * @param node The node to insert the value to.
-     * @param value The value to insert.
-     */
-    private fun insertVal(node: Node<T>, value: T?) {
-        for (index in node.children!!.indices) {
-            if (comparator.compare(value, node.children!![index]!!.value) < 0) {
-                node.children!![index] = node.children!![index - 1]
-                node.children!![index - 1] = null
-                break
-            }
-        }
-        node.children!![node.elementAmount] = Node(value)
-        node.elementAmount++
-    }
-
-    /**
-     * Split the node to two nodes.
-     * Two split cases:
-     * a.After the leaf node is split, the middle node will be the parent node of the two new nodes.
-     * b.Or invoke <code>insertInternal</code> method.
-     */
-    private fun split(node: Node<T>, value: T?) {
-        var leftNode: Node<T> = Node()
-        var rightNode: Node<T> = Node()
-        insertVal(node, value)
-        TODO("Not finished yet.")
-
     }
 }

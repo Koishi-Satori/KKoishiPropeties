@@ -2,6 +2,7 @@ package top.kkoishi;
 
 import top.kkoishi.proc.ini.INIPropertiesLoader;
 import top.kkoishi.proc.ini.Section;
+import top.kkoishi.proc.json.JsonJavaBridge;
 import top.kkoishi.proc.json.JsonParser;
 import top.kkoishi.proc.properties.JavaPropertiesLoader;
 import top.kkoishi.proc.property.BuildFailedException;
@@ -13,6 +14,7 @@ import top.kkoishi.proc.property.TokenizeException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.nio.charset.StandardCharsets;
 
 /**
@@ -36,5 +38,31 @@ public final class Test {
         //test json parser.
         final var t = new JsonParser(Files.openAsUtf(new File("./test.json")));
         t.parse();
+        final var fooParser = new JsonParser(Files.openAsUtf(new File("./foo.json")));
+        fooParser.parse();
+        try {
+            System.out.println(JsonJavaBridge.cast(Foo.class, fooParser.result()));
+        } catch (InvocationTargetException | NoSuchMethodException | InstantiationException | IllegalAccessException | NoSuchFieldException e) {
+            e.printStackTrace();
+        }
+
+    }
+
+    /**
+     * Test use class.
+     */
+    private static class Foo {
+        final int bar;
+
+        public Foo (int bar) {
+            this.bar = bar;
+        }
+
+        @Override
+        public String toString () {
+            return "Foo{" +
+                    "bar=" + bar +
+                    '}';
+        }
     }
 }

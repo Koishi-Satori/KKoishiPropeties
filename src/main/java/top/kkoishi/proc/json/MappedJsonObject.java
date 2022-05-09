@@ -5,6 +5,7 @@ import kotlin.Pair;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Json object, but use map to store.
@@ -14,9 +15,10 @@ import java.util.Map;
 public final class MappedJsonObject {
     private final Map<String, Object> data;
 
-    public static MappedJsonObject cast (JsonObject o, Class<? extends Map<String, Object>> clz)
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    public static MappedJsonObject cast (JsonObject o, Class<? extends Map> clz)
             throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
-        final Constructor<? extends Map<String, Object>> constructor = clz.getDeclaredConstructor();
+        final Constructor<? extends Map> constructor = clz.getDeclaredConstructor();
         constructor.setAccessible(true);
         final MappedJsonObject mjo = new MappedJsonObject(constructor.newInstance());
         for (final Pair<String, Object> datum : o.data) {
@@ -26,10 +28,12 @@ public final class MappedJsonObject {
                 mjo.data.put(datum.getFirst(), datum.getSecond());
             }
         }
+        System.out.println("Cast finished:" + mjo);
         return mjo;
     }
 
-    private static MappedJsonObject cast0 (JsonObject o, Constructor<? extends Map<String, Object>> constructor)
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private static MappedJsonObject cast0 (JsonObject o, Constructor<? extends Map> constructor)
             throws InvocationTargetException, InstantiationException, IllegalAccessException {
         final MappedJsonObject mjo = new MappedJsonObject(constructor.newInstance());
         for (final Pair<String, Object> datum : o.data) {
@@ -64,5 +68,16 @@ public final class MappedJsonObject {
 
     public MappedJsonObject getJsonObject (String key) {
         return (MappedJsonObject) data.get(key);
+    }
+
+    public Set<Map.Entry<String, Object>> entrySet () {
+        return data.entrySet();
+    }
+
+    @Override
+    public String toString () {
+        return "MappedJsonObject{" +
+                "data=" + data +
+                '}';
     }
 }
