@@ -39,7 +39,19 @@ public final class MappedJsonObject {
             if (datum.getSecond() instanceof final JsonObject cpy) {
                 mjo.data.put(datum.getFirst(), cast0(cpy, constructor));
             } else {
-                mjo.data.put(datum.getFirst(), datum.getSecond());
+                if (datum.getSecond() != null && datum.getSecond().getClass().isArray()) {
+                    final var cursor = (Object[]) datum.getSecond();
+                    int i = 0;
+                    for (Object obj : cursor) {
+                        if (obj instanceof final JsonObject inst) {
+                            cursor[i] = cast0(inst, constructor);
+                        }
+                        ++i;
+                    }
+                    mjo.data.put(datum.getFirst(), cursor);
+                } else {
+                    mjo.data.put(datum.getFirst(), datum.getSecond());
+                }
             }
         }
         return mjo;

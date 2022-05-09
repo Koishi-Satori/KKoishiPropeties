@@ -4,6 +4,8 @@ import top.kkoishi.proc.ini.INIPropertiesLoader;
 import top.kkoishi.proc.ini.Section;
 import top.kkoishi.proc.json.JsonJavaBridge;
 import top.kkoishi.proc.json.JsonParser;
+import top.kkoishi.proc.json.MappedJsonObject;
+import top.kkoishi.proc.json.TargetClass;
 import top.kkoishi.proc.properties.JavaPropertiesLoader;
 import top.kkoishi.proc.property.BuildFailedException;
 import top.kkoishi.proc.property.Files;
@@ -16,6 +18,8 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.HashMap;
 
 /**
  * @author KKoishi_
@@ -36,11 +40,13 @@ public final class Test {
         javaLoader.entrySet().forEach(System.out::println);
         System.out.println("Commit:" + javaLoader.getCommit());
         //test json parser.
-        final var t = new JsonParser(Files.openAsUtf(new File("./test.json")));
-        t.parse();
-        final var fooParser = new JsonParser(Files.openAsUtf(new File("./foo.json")));
-        fooParser.parse();
-        try {
+        try {final var t = new JsonParser(Files.openAsUtf(new File("./test.json")));
+            t.parse();
+            final var temp = MappedJsonObject.cast(t.result(), HashMap.class);
+            System.out.println(temp);
+            System.out.println(JsonJavaBridge.cast(Node.class, t.result()));
+            final var fooParser = new JsonParser(Files.openAsUtf(new File("./foo.json")));
+            fooParser.parse();
             System.out.println(JsonJavaBridge.cast(Foo.class, fooParser.result()));
             fooParser.reset(Files.openAsUtf(new File("./bar.json")));
             fooParser.parse();
@@ -81,6 +87,22 @@ public final class Test {
             return "Bar{" +
                     "bar=" + bar +
                     ", foo=" + foo +
+                    '}';
+        }
+    }
+
+    private static class Node {
+        String name;
+        @TargetClass(classNames = "top.kkoishi.Test$Node")
+        Object value;
+        Node next;
+
+        @Override
+        public String toString () {
+            return "Node{" +
+                    "name='" + name + '\'' +
+                    ", value=" + ((value != null && value.getClass().isArray()) ? Arrays.deepToString((Object[]) value) : value) +
+                    ", next=" + next +
                     '}';
         }
     }

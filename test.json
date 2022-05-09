@@ -1,12 +1,49 @@
 {
-  "class": "Array",
-  "length": 3,
-  "arr": [
-    {},
-    {},
-    1
-  ],
-  "fuck": "mojang",
-  "others": false,
-  "aaa": null
+  "name": "head",
+  "value": 1145141919810,
+  "next": {
+    "name": "tail",
+    "value": [
+      null,
+      true,
+      {
+        "name": "only",
+        "value": "abababababababababa",
+        "next": {
+          "name": "j",
+          "value": "KKoishi_",
+          "next": {
+            "name": "yt",
+            "value": false,
+            "next": {
+              "name": "head",
+              "value": 1145141919810,
+              "next": {
+                "name": "tail",
+                "value": [
+                  null,
+                  true,
+                  {
+                    "name": "only",
+                    "value": "abababababababababa",
+                    "next": {
+                      "name": "j",
+                      "value": "KKoishi_",
+                      "next": {
+                        "name": "yt",
+                        "value": false,
+                        "next": null
+                      }
+                    }
+                  }
+                ],
+                "next": null
+              }
+            }
+          }
+        }
+      }
+    ],
+    "next": null
+  }
 }

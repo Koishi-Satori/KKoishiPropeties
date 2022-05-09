@@ -4,10 +4,8 @@ import sun.misc.Unsafe
 import top.kkoishi.proc.property.BuildFailedException
 import top.kkoishi.proc.property.TokenizeException
 import java.lang.NumberFormatException
-import java.lang.System.err
 import java.math.BigDecimal
 import java.math.BigInteger
-import kotlin.Comparator
 import kotlin.collections.ArrayList
 import kotlin.collections.HashSet
 
@@ -229,7 +227,7 @@ class JsonBuildInfo<T>(val clz: Class<T>) {
         INT, FLOAT, SHORT, LONG, DOUBLE, BOOLEAN, STRING, BYTE, CLASS, ARRAY
     }
 
-    data class FieldRef (val type: JsonInfoType, val clz: Class<Any?>?, val name: String)
+    data class FieldRef(val type: JsonInfoType, val clz: Class<Any?>?, val name: String)
 
     private val fields: ArrayList<FieldRef> = ArrayList()
 
@@ -241,6 +239,25 @@ class JsonBuildInfo<T>(val clz: Class<T>) {
     fun getFields(): ArrayList<FieldRef> {
         return fields
     }
+}
+
+/**
+ * Mark how to decode json object to java class instance.
+ *
+ * @param classNames the possible class names' list.
+ */
+@Retention(AnnotationRetention.RUNTIME)
+@Target(AnnotationTarget.FIELD)
+@MustBeDocumented
+annotation class TargetClass(vararg val classNames: String)
+
+@Throws(ClassNotFoundException::class)
+fun TargetClass.accessClass(): Array<Class<*>?> {
+    val result: Array<Class<*>?> = Array(classNames.size) { null }
+    for ((index, value) in classNames.withIndex()) {
+        result[index] = Class.forName(value)
+    }
+    return result
 }
 
 internal fun getStringIterator(content: String): Iterator<Char> {
