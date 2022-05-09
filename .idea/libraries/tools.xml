@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="tools">
+    <CLASSES>
+      <root url="jar://C:/Program Files/AdoptOpenJDK/jdk-8.0.292.10-hotspot/lib/tools.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://C:/Program Files/AdoptOpenJDK/jdk-8.0.292.10-hotspot/lib/tools.jar!/" />
+    </SOURCES>
+  </library>
+</component>
