@@ -40,10 +40,11 @@ public final class Test {
         javaLoader.entrySet().forEach(System.out::println);
         System.out.println("Commit:" + javaLoader.getCommit());
         //test json parser.
-        try {final var t = new JsonParser(Files.openAsUtf(new File("./test.json")));
+        try {
+            final var t = new JsonParser(Files.openAsUtf(new File("./test.json")));
             t.parse();
-            final var temp = MappedJsonObject.cast(t.result(), HashMap.class);
-            System.out.println(temp);
+//            final var temp = MappedJsonObject.cast(t.result(), HashMap.class);
+//            System.out.println(temp);
             System.out.println(JsonJavaBridge.cast(Node.class, t.result()));
             final var fooParser = new JsonParser(Files.openAsUtf(new File("./foo.json")));
             fooParser.parse();
@@ -54,7 +55,6 @@ public final class Test {
         } catch (InvocationTargetException | NoSuchMethodException | InstantiationException | IllegalAccessException | NoSuchFieldException e) {
             e.printStackTrace();
         }
-
     }
 
     /**

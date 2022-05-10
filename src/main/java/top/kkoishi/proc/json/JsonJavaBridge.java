@@ -1,11 +1,11 @@
 package top.kkoishi.proc.json;
 
+import kotlin.Pair;
 import sun.misc.Unsafe;
 import top.kkoishi.proc.property.BuildFailedException;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
-import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -17,81 +17,6 @@ public final class JsonJavaBridge {
     static Unsafe sharedUnsafe = JsonSupportKt.getUNSAFE();
 
     private JsonJavaBridge () {
-    }
-
-    @Deprecated
-    @SuppressWarnings({"unchecked", "EnhancedSwitchMigration"})
-    public static <T> T build (MappedJsonObject jsonObject, JsonBuildInfo<T> info)
-            throws InstantiationException, BuildFailedException, NoSuchFieldException,
-            IllegalAccessException {
-        final T inst = (T) sharedUnsafe.allocateInstance(info.getClz());
-        for (final JsonBuildInfo.FieldRef field : info.fields()) {
-            final Field f = info.getClz().getDeclaredField(field.getName());
-            f.setAccessible(true);
-            final long offset = sharedUnsafe.objectFieldOffset(f);
-            if (field.getClz() == null) {
-                switch (field.getType()) {
-                    case INT: {
-                        sharedUnsafe.compareAndSwapInt(inst, offset, 0,
-                                jsonObject.getNumber(field.getName()).intValue());
-                        break;
-                    }
-                    case LONG: {
-                        sharedUnsafe.compareAndSwapLong(info, offset, 0,
-                                jsonObject.getNumber(field.getName()).longValue());
-                        break;
-                    }
-                    case FLOAT: {
-                        sharedUnsafe.compareAndSwapObject(info, offset, f.get(inst),
-                                jsonObject.getNumber(field.getName()).floatValue());
-                        break;
-                    }
-                    case SHORT: {
-                        sharedUnsafe.compareAndSwapObject(info, offset, f.get(inst),
-                                jsonObject.getNumber(field.getName()).shortValue());
-                        break;
-                    }
-                    case DOUBLE: {
-                        sharedUnsafe.compareAndSwapObject(info, offset, f.get(inst),
-                                jsonObject.getNumber(field.getName()).doubleValue());
-                        break;
-                    }
-                    case STRING: {
-                        sharedUnsafe.compareAndSwapObject(info, offset, f.get(inst),
-                                jsonObject.getString(field.getName()));
-                        break;
-                    }
-                    case BOOLEAN: {
-                        sharedUnsafe.compareAndSwapObject(info, offset, f.get(inst),
-                                jsonObject.getBool(field.getName()));
-                        break;
-                    }
-                    case BYTE: {
-                        sharedUnsafe.compareAndSwapObject(info, offset, f.get(inst),
-                                jsonObject.getNumber(field.getName()).byteValue());
-                        break;
-                    }
-                    default: {
-                        throw new BuildFailedException();
-                    }
-                }
-            } else {
-                switch (field.getType()) {
-                    case CLASS: {
-
-                        break;
-                    }
-                    case ARRAY: {
-                        //create array
-                        break;
-                    }
-                    default: {
-                        throw new BuildFailedException();
-                    }
-                }
-            }
-        }
-        return inst;
     }
 
     @SuppressWarnings("unchecked")
@@ -106,10 +31,46 @@ public final class JsonJavaBridge {
             final Field f = findField(clz, jsonEntry.getKey());
             f.setAccessible(true);
             final long offset = sharedUnsafe.objectFieldOffset(f);
+            cast_judge:
             if (jsonEntry.getValue() instanceof final MappedJsonObject cpy) {
+                final var annotate = f.getAnnotation(TargetClass.class);
+                if (annotate != null) {
+                    for (final String className : annotate.classNames()) {
+                        try {
+                            if (sharedUnsafe.compareAndSwapObject(inst, offset, f.get(inst), cast0(Class.forName(className), cpy))) {
+                                break cast_judge;
+                            }
+                        } catch (Exception ignore) {
+                        }
+                    }
+                }
                 sharedUnsafe.compareAndSwapObject(inst, offset, f.get(inst), cast0(f.getType(), cpy));
             } else {
-                trySetField(inst, offset, f.get(inst), jsonEntry.getValue(), f.getType());
+                if (jsonEntry.getValue() != null && jsonEntry.getValue().getClass().isArray()) {
+                    final var array = ((Object[]) jsonEntry.getValue());
+                    int i = 0;
+                    for (final Object o : array) {
+                        annotation_judge:
+                        if (o instanceof final MappedJsonObject cursor) {
+                            final var annotate = f.getAnnotation(TargetClass.class);
+                            if (annotate != null) {
+                                for (final String className : annotate.classNames()) {
+                                    try {
+                                        array[i++] = cast0(Class.forName(className), cursor);
+                                        break annotation_judge;
+                                    } catch (Exception ignored) {
+                                    }
+                                }
+                            }
+                            sharedUnsafe.compareAndSwapObject(inst, offset, f.get(inst), cursor);
+                        } else {
+                            trySetField(inst, offset, f.get(inst), jsonEntry.getValue(), f.getType());
+                        }
+                        ++i;
+                    }
+                } else {
+                    trySetField(inst, offset, f.get(inst), jsonEntry.getValue(), f.getType());
+                }
             }
         }
         return inst;
@@ -159,13 +120,14 @@ public final class JsonJavaBridge {
             final Field f = findField(clz, jsonEntry.getKey());
             f.setAccessible(true);
             final long offset = sharedUnsafe.objectFieldOffset(f);
+            ss:
             if (jsonEntry.getValue() instanceof final MappedJsonObject cpy) {
                 final var annotate = f.getAnnotation(TargetClass.class);
                 if (annotate != null) {
                     for (final String className : annotate.classNames()) {
                         try {
                             if (sharedUnsafe.compareAndSwapObject(inst, offset, f.get(inst), cast0(Class.forName(className), cpy))) {
-                                break;
+                                break ss;
                             }
                         } catch (Exception e) {
                             continue;
@@ -178,14 +140,14 @@ public final class JsonJavaBridge {
                     final var array = ((Object[]) jsonEntry.getValue());
                     int i = 0;
                     for (final Object o : array) {
+                        s:
                         if (o instanceof final MappedJsonObject cursor) {
                             final var annotate = f.getAnnotation(TargetClass.class);
                             if (annotate != null) {
                                 for (final String className : annotate.classNames()) {
-                                    System.out.println("Looking for:" + className);
                                     try {
-                                        array[i] = cast0(Class.forName(className), cursor);
-                                        break;
+                                        array[i++] = cast0(Class.forName(className), cursor);
+                                        break s;
                                     } catch (Exception e) {
                                         continue;
                                     }
@@ -193,21 +155,135 @@ public final class JsonJavaBridge {
                             }
                             sharedUnsafe.compareAndSwapObject(inst, offset, f.get(inst), cursor);
                         } else {
-                            sharedUnsafe.compareAndSwapObject(inst, offset, f.get(inst), jsonEntry.getValue());
+                            trySetField(inst, offset, f.get(inst), jsonEntry.getValue(), f.getType());
                         }
                         ++i;
                     }
                 } else {
-                    sharedUnsafe.compareAndSwapObject(inst, offset, f.get(inst), jsonEntry.getValue());
+                    trySetField(inst, offset, f.get(inst), jsonEntry.getValue(), f.getType());
                 }
             }
         }
         return inst;
     }
 
+    @SuppressWarnings("unchecked")
     public static <T> T cast (Class<T> clz, JsonObject jsonObject)
             throws InvocationTargetException, NoSuchMethodException, InstantiationException,
             IllegalAccessException, BuildFailedException, NoSuchFieldException {
-        return cast(clz, MappedJsonObject.cast(jsonObject, HashMap.class));
+        if (clz.isArray() || clz.isEnum() || clz.isInterface()) {
+            throw new BuildFailedException();
+        }
+        final T inst = (T) sharedUnsafe.allocateInstance(clz);
+        for (final Pair<String, Object> jsonEntry : jsonObject.data) {
+            final Field f = findField(clz, jsonEntry.getFirst());
+            f.setAccessible(true);
+            final long offset = sharedUnsafe.objectFieldOffset(f);
+            ss:
+            if (jsonEntry.getSecond() instanceof final JsonObject cpy) {
+                final var annotate = f.getAnnotation(TargetClass.class);
+                if (annotate != null) {
+                    for (final String className : annotate.classNames()) {
+                        try {
+                            if (sharedUnsafe.compareAndSwapObject(inst, offset, f.get(inst), cast0(Class.forName(className), cpy))) {
+                                break ss;
+                            }
+                        } catch (Exception ignored) {
+                        }
+                    }
+                }
+                sharedUnsafe.compareAndSwapObject(inst, offset, f.get(inst), cast0(f.getType(), cpy));
+            } else {
+                if (jsonEntry.getSecond() != null && jsonEntry.getSecond().getClass().isArray()) {
+                    final var array = ((Object[]) jsonEntry.getSecond());
+                    int i = 0;
+                    for (final Object o : array) {
+                        s:
+                        if (o instanceof final JsonObject cursor) {
+                            final var annotate = f.getAnnotation(TargetClass.class);
+                            if (annotate != null) {
+                                for (final String className : annotate.classNames()) {
+                                    try {
+                                        array[i++] = cast0(Class.forName(className), cursor);
+                                        break s;
+                                    } catch (Exception ignore) {
+                                    }
+                                }
+                            }
+                            sharedUnsafe.compareAndSwapObject(inst, offset, f.get(inst), cursor);
+                        } else {
+                            trySetField(inst, offset, f.get(inst), jsonEntry.getSecond(), f.getType());
+                        }
+                        ++i;
+                    }
+                } else {
+                    trySetField(inst, offset, f.get(inst), jsonEntry.getSecond(), f.getType());
+                }
+            }
+        }
+        return inst;
+    }
+
+    private static Object cast0 (Class<?> clz, JsonObject jsonObject) throws BuildFailedException, InstantiationException, NoSuchFieldException, IllegalAccessException {
+        if (clz.isArray() || clz.isEnum() || clz.isInterface()) {
+            throw new BuildFailedException();
+        }
+        final Object inst = sharedUnsafe.allocateInstance(clz);
+        for (final Pair<String, Object> jsonEntry : jsonObject.data) {
+            final Field f = findField(clz, jsonEntry.getFirst());
+            f.setAccessible(true);
+            final long offset = sharedUnsafe.objectFieldOffset(f);
+            ss:
+            if (jsonEntry.getSecond() instanceof final JsonObject cpy) {
+                final var annotate = f.getAnnotation(TargetClass.class);
+                if (annotate != null) {
+                    for (final String className : annotate.classNames()) {
+                        try {
+                            if (sharedUnsafe.compareAndSwapObject(inst, offset, f.get(inst), cast0(Class.forName(className), cpy))) {
+                                break ss;
+                            }
+                        } catch (Exception ignored) {
+                        }
+                    }
+                }
+                sharedUnsafe.compareAndSwapObject(inst, offset, f.get(inst), cast0(f.getType(), cpy));
+            } else {
+                if (jsonEntry.getSecond() != null && jsonEntry.getSecond().getClass().isArray()) {
+                    final var array = ((Object[]) jsonEntry.getSecond());
+                    int i = 0;
+                    for (final Object o : array) {
+                        s:
+                        if (o instanceof final JsonObject cursor) {
+                            final var annotate = f.getAnnotation(TargetClass.class);
+                            if (annotate != null) {
+                                for (final String className : annotate.classNames()) {
+                                    try {
+                                        array[i++] = cast0(Class.forName(className), cursor);
+                                        break s;
+                                    } catch (Exception ignore) {
+                                    }
+                                }
+                            }
+                            sharedUnsafe.compareAndSwapObject(inst, offset, f.get(inst), cursor);
+                        } else {
+                            trySetField(inst, offset, f.get(inst), jsonEntry.getSecond(), f.getType());
+                        }
+                        ++i;
+                    }
+                } else {
+                    trySetField(inst, offset, f.get(inst), jsonEntry.getSecond(), f.getType());
+                }
+            }
+        }
+        return inst;
+    }
+
+    public static JavaObject castArray (Object array) {
+        if (array != null && array.getClass().isArray()) {
+            final JsonArrayEncoder encoder = new JsonArrayEncoder((Object[]) array);
+            encoder.parse();
+            return encoder.result();
+        }
+        throw new IllegalArgumentException();
     }
 }
