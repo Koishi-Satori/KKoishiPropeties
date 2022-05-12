@@ -82,6 +82,8 @@ public final class Test {
             final var convertor = new JsonConvertor(jsonObject);
 //            test use.
 //            jsonConvertTest(convertor);
+            convertor.convert();
+            System.out.println(convertor.result());
         } catch (InvocationTargetException | NoSuchMethodException | InstantiationException | IllegalAccessException | NoSuchFieldException e) {
             e.printStackTrace();
         }

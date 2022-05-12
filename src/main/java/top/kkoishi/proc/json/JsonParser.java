@@ -6,6 +6,7 @@ import top.kkoishi.proc.property.Files;
 import top.kkoishi.proc.property.TokenizeException;
 
 import java.io.File;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.function.Consumer;
@@ -121,7 +122,7 @@ public class JsonParser {
         }
 
         public boolean isEmpty () {
-            return elements.length - head <= 1;
+            return elements.length - head <= 0;
         }
 
         void add (Token token) {
@@ -139,7 +140,7 @@ public class JsonParser {
         }
 
         Token remove () {
-            if (elements.length - 1 == head) {
+            if (elements.length == head) {
                 throw new NoSuchElementException("The TokenList is empty.");
             }
             final Token oldVal = elements[head];

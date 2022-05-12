@@ -43,7 +43,11 @@ internal val TYPE_MAP: Map<Class<*>, Type> = HashMap<Class<*>, Type>(48).apply {
     )
 }
 
-class JsonJavaConvertException: LoaderException {
+internal operator fun Token.component1(): Type = this.type
+
+internal operator fun Token.component2(): String? = this.value
+
+class JsonJavaConvertException : LoaderException {
     constructor() : super()
     constructor(message: String?) : super(message)
     constructor(message: String?, cause: Throwable?) : super(message, cause)
@@ -52,16 +56,14 @@ class JsonJavaConvertException: LoaderException {
 
 @Suppress("MemberVisibilityCanBePrivate")
 open class JsonConvertor(jsonObject: JsonObject) {
-    protected val buf: StringBuilder = StringBuilder()
-    protected val stack: ArrayDeque<Char> = ArrayDeque()
     protected var tokens = TokenList()
+    protected val result: StringBuilder = StringBuilder()
 
-    fun tokens (): TokenList {
+    fun tokens(): TokenList {
         return tokens
     }
 
     init {
-        INTEGER_CLASS.classes
         buildObject(jsonObject)
     }
 
@@ -95,7 +97,8 @@ open class JsonConvertor(jsonObject: JsonObject) {
                     buildArray(any)
                 }
                 else -> {
-                    val type: Type = TYPE_MAP[any.javaClass] ?: throw JsonJavaConvertException("The type of $any is illegal.")
+                    val type: Type =
+                        TYPE_MAP[any.javaClass] ?: throw JsonJavaConvertException("The type of $any is illegal.")
                     when (type) {
                         Type.NUMBER -> tokens.add(Token(type, (any as Number).toString()))
                         Type.BOOLEAN -> tokens.add(Token(type, if (any as Boolean) "0" else "1"))
@@ -113,5 +116,71 @@ open class JsonConvertor(jsonObject: JsonObject) {
             buildAny(value)
         }
         tokens.add(Token(Type.ARRAY_END, null))
+    }
+
+    fun convert() {
+        while (!tokens.isEmpty) {
+            val (type, value) = tokens.remove()
+            when (type) {
+                Type.OBJ_BEGIN -> result.append('{')
+                Type.OBJ_END -> result.append('}')
+                Type.STRING -> result.append('"').append(value).append('"')
+                Type.SEP_ENTRY -> result.append(": ")
+                Type.NUMBER -> result.append(value)
+                Type.SEP_COMMA -> result.append(", ")
+                Type.BOOLEAN -> result.append(value == "0")
+                Type.NULL -> result.append("null")
+                Type.ARRAY_BEGIN -> {
+                    result.append('[')
+                    convertArray()
+                }
+                else -> throw JsonJavaConvertException()
+            }
+        }
+    }
+
+    protected fun convertArray () {
+        var mappingObject = false
+        while (!tokens.isEmpty) {
+            val (type, value) = tokens.remove()
+            when (type) {
+                Type.OBJ_BEGIN -> {
+                    result.append('{')
+                    mappingObject = true
+                }
+                Type.OBJ_END -> {
+                    result.append('}')
+                    mappingObject = false
+                }
+                Type.STRING -> result.append('"').append(value).append('"')
+                Type.SEP_ENTRY -> result.append(": ")
+                Type.NUMBER -> result.append(value)
+                Type.SEP_COMMA -> result.append(", ")
+                Type.BOOLEAN -> result.append(value == "0")
+                Type.NULL -> result.append("null")
+                Type.ARRAY_BEGIN -> {
+                    result.append('[')
+                    convertArray()
+                }
+                Type.ARRAY_END -> {
+                    result.deleteAtReverse(0).deleteAtReverse(0)
+                    result.append(']')
+                    return
+                }
+            }
+            if (!mappingObject)
+                result.append(", ")
+        }
+    }
+
+    fun result(): StringBuilder {
+        return result
+    }
+
+    fun reset(jsonObject: JsonObject) {
+        result.clear()
+        tokens.clear()
+        tokens = TokenList()
+        buildObject(jsonObject)
     }
 }

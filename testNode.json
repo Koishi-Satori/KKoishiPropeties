@@ -1,0 +1,20 @@
+{
+  "name": "head",
+  "value": [
+    null,
+    114514,
+    1919810,
+    114514.191981,
+    {
+      "name": null,
+      "value": null,
+      "next": null
+    },
+    true
+  ],
+  "next": {
+    "name": null,
+    "value": null,
+    "next": null
+  }
+}

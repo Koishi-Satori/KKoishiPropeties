@@ -7,7 +7,6 @@ import top.kkoishi.proc.property.TokenizeException
 import java.lang.NumberFormatException
 import java.math.BigDecimal
 import java.math.BigInteger
-import kotlin.collections.ArrayList
 import kotlin.collections.HashSet
 
 val INT_MAX = BigInteger("7fffffff", 16)
@@ -48,13 +47,9 @@ internal fun accessUnsafe(): Unsafe {
     return f.get(null) as Unsafe
 }
 
-internal fun java.lang.StringBuilder.clear() {
-    this.delete(0, this.length)
-}
+internal fun java.lang.StringBuilder.clear() = this.delete(0, this.length)
 
-internal fun java.lang.StringBuilder.deleteAtReverse(index: Int) {
-    this.deleteAt(this.length - index - 1)
-}
+internal fun java.lang.StringBuilder.deleteAtReverse(index: Int) = this.deleteAt(this.length - index - 1)
 
 @Throws(JsonSyntaxException::class, UnexpectedJsonException::class)
 internal fun JsonParser.block() {
@@ -245,25 +240,6 @@ class JsonSyntaxException : TokenizeException {
 class Entry(var key: String, var value: Any?) {
     fun cast2Pair(): Pair<String, Any?> {
         return Pair(key, value)
-    }
-}
-
-class JsonBuildInfo<T>(val clz: Class<T>) {
-    enum class JsonInfoType {
-        INT, FLOAT, SHORT, LONG, DOUBLE, BOOLEAN, STRING, BYTE, CLASS, ARRAY
-    }
-
-    data class FieldRef(val type: JsonInfoType, val clz: Class<Any?>?, val name: String)
-
-    private val fields: ArrayList<FieldRef> = ArrayList()
-
-    fun addField(fieldRef: FieldRef) {
-        fields.add(fieldRef)
-    }
-
-    @JvmName("fields")
-    fun getFields(): ArrayList<FieldRef> {
-        return fields
     }
 }
 
