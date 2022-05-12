@@ -12,9 +12,7 @@ import java.util.Set;
  *
  * @author KKoishi_
  */
-public final class MappedJsonObject {
-    private final Map<String, Object> data;
-
+public record MappedJsonObject(Map<String, Object> data) {
     @SuppressWarnings({"rawtypes", "unchecked"})
     public static MappedJsonObject cast (JsonObject o, Class<? extends Map> clz)
             throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
@@ -55,10 +53,6 @@ public final class MappedJsonObject {
             }
         }
         return mjo;
-    }
-
-    private MappedJsonObject (Map<String, Object> data) {
-        this.data = data;
     }
 
     public Object get (String key) {

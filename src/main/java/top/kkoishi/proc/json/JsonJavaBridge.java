@@ -4,8 +4,6 @@ import kotlin.Pair;
 import sun.misc.Unsafe;
 import top.kkoishi.proc.property.BuildFailedException;
 
-import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Map;
@@ -28,6 +26,34 @@ public final class JsonJavaBridge {
     private JsonJavaBridge () {
     }
 
+    /**
+     * Convert MappedJsonObject instance to Java Object instance.
+     * Given class, and it will try to build an instance.
+     * And by using <code>@TargetClass</code> Annotate,
+     * you can build the class more accuracy.
+     * If you do not use this Annotate, all the field
+     * which is object will be set as MappedJsonObject instance.
+     * <b><h3>But please make sure the key is name of field and
+     * the value must be correct type!</h1></b>
+     *
+     * @param clz class of java object
+     * @param jsonObject instance of JsonObject
+     * @param <T> type
+     * @return instance of java object
+     * @see TargetClass
+     * @see Unsafe#allocateInstance(Class)
+     * @see Unsafe#objectFieldOffset(Field)
+     * @see Unsafe#compareAndSwapObject(Object, long, Object, Object)
+     * @see JsonJavaBridge#trySetField(Object, long, Object, Object, Class)
+     * @see JsonJavaBridge#cast0(Class, MappedJsonObject)
+     * @see Unsafe
+     * @see JsonJavaBridge#sharedUnsafe
+     * @see JsonSupportKt#jsonTokenCast(JsonParser.Token)
+     * @throws BuildFailedException when failed to build instance
+     * @throws InstantiationException thrown by sun.misc.Unsafe, if failed to allocate instance.
+     * @throws NoSuchFieldException if the field does not exist.
+     * @throws IllegalAccessException if it can not access the field.
+     */
     @SuppressWarnings("unchecked")
     public static <T> T cast (Class<T> clz, MappedJsonObject jsonObject)
             throws BuildFailedException, InstantiationException, NoSuchFieldException,
@@ -85,6 +111,16 @@ public final class JsonJavaBridge {
         return inst;
     }
 
+    /**
+     * Find field by the given name and class.
+     * Different from {@link Class#getDeclaredField(String) Class::getDeclaredField},
+     * this method will get the fields belong to the class's superclass.
+     *
+     * @param clz class.
+     * @param name field name.
+     * @return field instance.
+     * @throws NoSuchFieldException if there is no such field.
+     */
     public static Field findField (Class<?> clz, String name) throws NoSuchFieldException {
         Field f;
         try {

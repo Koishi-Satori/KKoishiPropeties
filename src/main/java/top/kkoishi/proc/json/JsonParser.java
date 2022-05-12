@@ -2,16 +2,21 @@ package top.kkoishi.proc.json;
 
 import kotlin.collections.ArrayDeque;
 import top.kkoishi.proc.property.BuildFailedException;
-import top.kkoishi.proc.property.Files;
 import top.kkoishi.proc.property.TokenizeException;
 
-import java.io.File;
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.function.Consumer;
 
-import static top.kkoishi.proc.json.JsonSupportKt.*;
+import static top.kkoishi.proc.json.JsonSupportKt.array;
+import static top.kkoishi.proc.json.JsonSupportKt.block;
+import static top.kkoishi.proc.json.JsonSupportKt.bool;
+import static top.kkoishi.proc.json.JsonSupportKt.clear;
+import static top.kkoishi.proc.json.JsonSupportKt.jsonTokenCast;
+import static top.kkoishi.proc.json.JsonSupportKt.key;
+import static top.kkoishi.proc.json.JsonSupportKt.nil;
+import static top.kkoishi.proc.json.JsonSupportKt.numberValue;
+import static top.kkoishi.proc.json.JsonSupportKt.sep;
 
 /**
  * A simple Json Parser based on Complete Principle.

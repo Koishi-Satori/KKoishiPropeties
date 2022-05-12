@@ -16,7 +16,7 @@ val LONG_MIN = BigInteger("-9223372036854775808")
 val DOUBLE_MAX = BigDecimal(Double.MAX_VALUE)
 val DOUBLE_MIN = BigDecimal(Double.MIN_VALUE)
 val NUMBER_MAP = HashSet<Char>(listOf('-', '_', '.', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0'))
-val UNSAFE: Unsafe = accessUnsafe()
+internal val UNSAFE: Unsafe = accessUnsafe()
 val BASIC_TYPES = accessBasicTypes()
 
 internal fun accessBasicTypes(): HashSet<Class<*>> = HashSet<Class<*>>(24).apply {

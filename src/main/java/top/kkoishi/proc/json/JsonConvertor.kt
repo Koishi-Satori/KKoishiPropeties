@@ -4,7 +4,6 @@ import top.kkoishi.proc.json.JsonJavaBridge.*
 import top.kkoishi.proc.property.LoaderException
 import java.math.BigDecimal
 import java.math.BigInteger
-import kotlin.collections.ArrayDeque
 import kotlin.collections.HashMap
 
 typealias Token = JsonParser.Token
