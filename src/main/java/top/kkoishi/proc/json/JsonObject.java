@@ -45,7 +45,7 @@ public final class JsonObject {
             for (int i = 0; i < size; i++) {
                 final var datum = data.get(i);
                 sb.append('(').append(datum.getFirst()).append(" = ");
-                if (datum.getSecond().getClass().isArray()) {
+                if (datum.getSecond() != null && datum.getSecond().getClass().isArray()) {
                     sb.append(Arrays.deepToString((Object[]) datum.getSecond()));
                 } else {
                     sb.append(datum.getSecond());
@@ -55,7 +55,11 @@ public final class JsonObject {
             final var datum = data.get(size);
             sb.append('(').append(datum.getFirst()).append(" = ");
             if (datum.getSecond() != null && datum.getSecond().getClass().isArray()) {
-                sb.append(Arrays.deepToString((Object[]) datum.getSecond()));
+                try {
+                    sb.append(Arrays.deepToString((Object[]) datum.getSecond()));
+                } catch (Exception e) {
+                    sb.append(datum.getSecond());
+                }
             } else {
                 sb.append(datum.getSecond());
             }

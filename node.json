@@ -1,0 +1,44 @@
+{
+  "name": "test",
+  "value": true,
+  "next": {
+    "name": "test",
+    "value": [
+      "fuck",
+      "lzu",
+      "ibm",
+      "nb",
+      1111,
+      true,
+      null,
+      1145141919810,
+      "ymn",
+      [
+        "ymn",
+        "udk",
+        {
+          "name": "test",
+          "value": true,
+          "next": null
+        }
+      ]
+    ],
+    "next": {
+      "name": "test",
+      "value": true,
+      "next": {
+        "name": "test",
+        "value": {
+          "name": "test",
+          "value": true,
+          "next": null
+        },
+        "next": {
+          "name": "test",
+          "value": true,
+          "next": null
+        }
+      }
+    }
+  }
+}

@@ -1,5 +1,6 @@
 package top.kkoishi.proc.json
 
+import top.kkoishi.proc.json.JsonJavaBridge.*
 import sun.misc.Unsafe
 import top.kkoishi.proc.property.BuildFailedException
 import top.kkoishi.proc.property.TokenizeException
@@ -17,6 +18,29 @@ val DOUBLE_MAX = BigDecimal(Double.MAX_VALUE)
 val DOUBLE_MIN = BigDecimal(Double.MIN_VALUE)
 val NUMBER_MAP = HashSet<Char>(listOf('-', '_', '.', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0'))
 val UNSAFE: Unsafe = accessUnsafe()
+val BASIC_TYPES = accessBasicTypes()
+
+internal fun accessBasicTypes(): HashSet<Class<*>> = HashSet<Class<*>>(24).apply {
+    addAll(
+        listOf(
+            INTEGER_CLASS,
+            java.lang.Integer::class.java,
+            LONG_CLASS,
+            java.lang.Long::class.java,
+            FLOAT_CLASS,
+            java.lang.Float::class.java,
+            DOUBLE_CLASS,
+            java.lang.Double::class.java,
+            SHORT_CLASS,
+            java.lang.Short::class.java,
+            BYTE_CLASS,
+            java.lang.Byte::class.java,
+            java.lang.String::class.java,
+            java.lang.StringBuilder::class.java,
+            java.lang.StringBuffer::class.java
+        )
+    )
+}
 
 internal fun accessUnsafe(): Unsafe {
     val f = Unsafe::class.java.getDeclaredField("theUnsafe")
@@ -170,7 +194,7 @@ internal fun JsonParser.sep() {
             this.builder.tokens.add(JsonParser.Token(JsonParser.JsonType.SEP_COMMA, null))
             this.sep()
         }
-        ' ', '\r', '\n', '\t' -> {
+        ' ', '\r', '\n', '\t', '{', '[' -> {
             this.lookForward()
             this.jump()
         }
@@ -189,7 +213,9 @@ internal fun JsonParser.sep() {
         else -> {
             if (NUMBER_MAP.contains(this.lookForward)) {
                 this.numberValue()
-            } else throw JsonSyntaxException()
+            } else {
+                throw JsonSyntaxException()
+            }
         }
     }
 }
@@ -250,6 +276,11 @@ class JsonBuildInfo<T>(val clz: Class<T>) {
 @Target(AnnotationTarget.FIELD)
 @MustBeDocumented
 annotation class TargetClass(vararg val classNames: String)
+
+@Retention(AnnotationRetention.RUNTIME)
+@Target(AnnotationTarget.FIELD)
+@MustBeDocumented
+annotation class ArrayClass(vararg val classNames: String)
 
 @Throws(ClassNotFoundException::class)
 fun TargetClass.accessClass(): Array<Class<*>?> {

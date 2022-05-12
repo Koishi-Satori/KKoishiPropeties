@@ -4,6 +4,8 @@ import kotlin.Pair;
 import sun.misc.Unsafe;
 import top.kkoishi.proc.property.BuildFailedException;
 
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Map;
@@ -14,6 +16,13 @@ import java.util.Map;
  * @author KKoishi_
  */
 public final class JsonJavaBridge {
+    static final Class<Integer> INTEGER_CLASS = int.class;
+    static final Class<Long> LONG_CLASS = long.class;
+    static final Class<Float> FLOAT_CLASS = float.class;
+    static final Class<Double> DOUBLE_CLASS = double.class;
+    static final Class<Short> SHORT_CLASS = short.class;
+    static final Class<Byte> BYTE_CLASS = byte.class;
+    static final Class<Boolean> BOOLEAN_CLASS = boolean.class;
     static Unsafe sharedUnsafe = JsonSupportKt.getUNSAFE();
 
     private JsonJavaBridge () {
@@ -91,20 +100,38 @@ public final class JsonJavaBridge {
     }
 
     private static <T> void trySetField (T inst, long offset, Object o, Object value, Class<?> clz) {
-        if (clz == int.class) {
-            sharedUnsafe.compareAndSwapInt(inst, offset, 0, ((Number) value).intValue());
-        } else if (clz == long.class) {
-            sharedUnsafe.compareAndSwapLong(inst, offset, 0, ((Number) value).longValue());
-        } else if (clz == float.class) {
-            sharedUnsafe.compareAndSwapObject(inst, offset, o, ((Number) value).floatValue());
-        } else if (clz == double.class) {
-            sharedUnsafe.compareAndSwapObject(inst, offset, o, ((Number) value).doubleValue());
-        } else if (clz == short.class) {
-            sharedUnsafe.compareAndSwapObject(inst, offset, o, ((Number) value).shortValue());
-        } else if (clz == byte.class) {
-            sharedUnsafe.compareAndSwapObject(inst, offset, o, ((Number) value).byteValue());
+        if (clz.isPrimitive()) {
+            if (clz == INTEGER_CLASS) {
+                sharedUnsafe.compareAndSwapInt(inst, offset, 0, ((Number) value).intValue());
+            } else if (clz == LONG_CLASS) {
+                sharedUnsafe.compareAndSwapLong(inst, offset, 0, ((Number) value).longValue());
+            } else if (clz == FLOAT_CLASS) {
+                sharedUnsafe.compareAndSwapObject(inst, offset, o, ((Number) value).floatValue());
+            } else if (clz == DOUBLE_CLASS) {
+                sharedUnsafe.compareAndSwapObject(inst, offset, o, ((Number) value).doubleValue());
+            } else if (clz == SHORT_CLASS) {
+                sharedUnsafe.compareAndSwapObject(inst, offset, o, ((Number) value).shortValue());
+            } else if (clz == BYTE_CLASS) {
+                sharedUnsafe.compareAndSwapObject(inst, offset, o, ((Number) value).byteValue());
+            } else {
+                throw new IllegalArgumentException("The basic type " + clz + " is illegal.");
+            }
         } else {
-            sharedUnsafe.compareAndSwapObject(inst, offset, o, value);
+            if (clz == Integer.class) {
+                sharedUnsafe.compareAndSwapInt(inst, offset, 0, ((Number) value).intValue());
+            } else if (clz == Long.class) {
+                sharedUnsafe.compareAndSwapLong(inst, offset, 0, ((Number) value).longValue());
+            } else if (clz == Float.class) {
+                sharedUnsafe.compareAndSwapObject(inst, offset, o, ((Number) value).floatValue());
+            } else if (clz == Double.class) {
+                sharedUnsafe.compareAndSwapObject(inst, offset, o, ((Number) value).doubleValue());
+            } else if (clz == Short.class) {
+                sharedUnsafe.compareAndSwapObject(inst, offset, o, ((Number) value).shortValue());
+            } else if (clz == Byte.class) {
+                sharedUnsafe.compareAndSwapObject(inst, offset, o, ((Number) value).byteValue());
+            } else {
+                sharedUnsafe.compareAndSwapObject(inst, offset, o, value);
+            }
         }
     }
 
@@ -285,5 +312,13 @@ public final class JsonJavaBridge {
             return encoder.result();
         }
         throw new IllegalArgumentException();
+    }
+
+    public static <T> JsonObject cast (Class<T> clz, Object o)
+            throws BuildFailedException, IllegalAccessException {
+        if (clz.isInterface() || clz.isArray() || clz.isEnum()) {
+            throw new BuildFailedException();
+        }
+        return JsonEncoderKt.castImpl(clz, o);
     }
 }

@@ -1,6 +1,12 @@
 package top.kkoishi.proc.json
 
+import top.kkoishi.proc.json.JsonJavaBridge.sharedUnsafe
+import java.lang.Exception
 import java.lang.reflect.Field
+import java.util.*
+import java.util.function.Consumer
+import kotlin.collections.ArrayList
+import kotlin.collections.HashMap
 import kotlin.reflect.KClass
 
 private val basicTypeMap: HashMap<out Any, JavaType> = initBasicTypeMap()
@@ -14,8 +20,58 @@ private fun initBasicTypeMap(): HashMap<Class<*>, JavaType> {
     map[Byte::class.java] = JavaType.BYTE
     map[Short::class.java] = JavaType.SHORT
     map[Boolean::class.java] = JavaType.BOOL
-    map[String::class.java] = JavaType.STRING
+    map[java.lang.String::class.java] = JavaType.STRING
     return map
+}
+
+@Throws(IllegalAccessException::class)
+private fun tryGetField(f: Field, o: Any, oClz: Class<*>): Any? =
+    if (BASIC_TYPES.contains(oClz)) f.get(o) else {
+        val fo = sharedUnsafe.getObject(o, sharedUnsafe.objectFieldOffset(f))
+        if (fo is Array<*>) {
+            castArray(fo)
+        } else if (fo != null) castImpl(oClz, fo) else null
+    }
+
+@Throws(IllegalAccessException::class)
+internal fun <T> castImpl(clz: Class<T>, o: Any): JsonObject {
+    val fields = getFields(clz)
+    val jsonObject = JsonObject(fields.size)
+    while (!fields.isEmpty()) {
+        val f = fields.removeFirst()
+        val annotation = f.getAnnotation(TargetClass::class.java)
+        if (annotation == null) jsonObject.data.add(Pair(f.name, tryGetField(f, o, f.type)))
+        else {
+            for (className in annotation.classNames) {
+                try {
+                    jsonObject.data.add(Pair(f.name, tryGetField(f, o, Class.forName(className))))
+                } catch (ignore: Exception) {
+                }
+            }
+        }
+    }
+    return jsonObject
+}
+
+private fun castArray(array: Array<*>): Array<Any?> {
+    val cpy: Array<Any?> = Array(array.size) { null }
+    array.withIndex().forEach { (index, value) ->
+        cpy[index] =
+            if (value == null || TYPE_MAP.containsKey(value.javaClass)) value else castImpl(value.javaClass, value)
+    }
+    return cpy
+}
+
+private fun getFields(clz: Class<*>): ArrayDeque<Field> {
+    val res = ArrayDeque(listOf(*clz.declaredFields))
+    res.forEach(Consumer { f: Field ->
+        f.isAccessible = true
+    })
+    val superClass = clz.superclass
+    if (superClass != null && superClass != Any::class.java) {
+        res.addAll(getFields(superClass))
+    }
+    return res
 }
 
 class JsonEncoder<T>(@Suppress("CanBeParameter") private val clz: KClass<Class<T>>) {
@@ -71,8 +127,11 @@ private fun Any.directlyCast(): JavaObjectImpl {
     }
     val entries: ArrayList<Pair<Field, Any?>> = ArrayList(fields.size)
     fields.forEach { f ->
-        f.isAccessible = true
-        entries.add(Pair(f, f.get(this)))
+        try {
+            f.isAccessible = true
+            entries.add(Pair(f, sharedUnsafe.getObject(this, sharedUnsafe.objectFieldOffset(f))))
+        } catch (ignore: Exception) {
+        }
     }
     return JavaObjectImpl(entries)
 }

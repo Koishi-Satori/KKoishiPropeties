@@ -208,7 +208,6 @@ public class JsonParser {
                 throw new JsonSyntaxException("The json must have a object begin token.");
             }
             result = build0();
-            System.out.println(result);
         }
 
         @SuppressWarnings("EnhancedSwitchMigration")
@@ -279,7 +278,7 @@ public class JsonParser {
                         final Object[] arr = new Object[buf.size()];
                         int index = 0;
                         while (!buf.isEmpty()) {
-                            arr[index++] = buf.removeLast();
+                            arr[index++] = buf.removeFirst();
                         }
                         temp.setValue(arr);
                         break;
@@ -291,7 +290,8 @@ public class JsonParser {
                         temp.setValue(null);
                         break;
                     }
-                    default: throw new BuildFailedException();
+                    default:
+                        throw new BuildFailedException();
                 }
             }
             if (temp != null) {
@@ -340,7 +340,7 @@ public class JsonParser {
                     case ARRAY_END: {
                         return arr;
                     }
-                    case NULL:{
+                    case NULL: {
                         arr.add(null);
                         break;
                     }
@@ -382,73 +382,81 @@ public class JsonParser {
         if (!rest.hasNext() && stack.isEmpty()) {
             return;
         }
-        switch (lookForward) {
-            case '{':
-            case '}': {
-                block(this);
-                break;
-            }
-            case ':': {
-                builder.tokens.add(new Token(JsonType.SEP_ENTRY, null));
-                sep(this);
-                break;
-            }
-            case ',': {
-                builder.tokens.add(new Token(JsonType.SEP_COMMA, null));
-                sep(this);
-                break;
-            }
-            case ' ':
-            case '\t':
-            case '\n':
-            case '\r': {
-                lookForward();
-                jump();
-                break;
-            }
-            case '"': {
-                key(this);
-                break;
-            }
-            case 't':
-            case 'f': {
-                clearBuf();
-                this.buf.append(lookForward);
-                bool(this);
-                this.jump();
-            }
-            case '[': {
-                array(this);
-                break;
-            }
-            case ']': {
-                if (stack.isEmpty()) {
-                    throw new TokenizeException();
+        switch_loop:
+        while (true) {
+            switch (lookForward) {
+                case '{':
+                case '}': {
+                    block(this);
+                    break switch_loop;
                 }
-                if (stack.removeLast() == '[') {
-                    this.builder.tokens.add(new Token(JsonType.ARRAY_END, null));
+                case ':': {
+                    builder.tokens.add(new Token(JsonType.SEP_ENTRY, null));
+                    sep(this);
+                    break switch_loop;
+                }
+                case ',': {
+                    builder.tokens.add(new Token(JsonType.SEP_COMMA, null));
+                    sep(this);
+                    break switch_loop;
+                }
+                case ' ':
+                case '\t':
+                case '\n':
+                case '\r': {
                     lookForward();
-                    jump();
-                } else {
-                    throw new JsonSyntaxException();
-                }
-                break;
-            }
-            case 'n': {
-                clearBuf();
-                this.buf.append(lookForward);
-                nil(this);
-                this.jump();
-            }
-            default: {
-                if (JsonSupportKt.getNUMBER_MAP().contains(lookForward)) {
-                    numberValue(this);
                     break;
-                } else {
+                }
+                case '"': {
+                    key(this);
+                    break switch_loop;
+                }
+                case 't':
+                case 'f': {
+                    clearBuf();
+                    this.buf.append(lookForward);
+                    bool(this);
                     if (!rest.hasNext() && stack.isEmpty()) {
                         return;
                     }
-                    throw new JsonSyntaxException("The token '" + lookForward + "' is illegal.");
+                    break;
+                }
+                case '[': {
+                    array(this);
+                    break switch_loop;
+                }
+                case ']': {
+                    if (stack.isEmpty()) {
+                        throw new TokenizeException();
+                    }
+                    if (stack.removeLast() == '[') {
+                        this.builder.tokens.add(new Token(JsonType.ARRAY_END, null));
+                        lookForward();
+                        jump();
+                    } else {
+                        throw new JsonSyntaxException();
+                    }
+                    break switch_loop;
+                }
+                case 'n': {
+                    clearBuf();
+                    this.buf.append(lookForward);
+                    nil(this);
+                    if (!rest.hasNext() && stack.isEmpty()) {
+                        return;
+                    }
+                    break;
+                }
+                default: {
+                    if (JsonSupportKt.getNUMBER_MAP().contains(lookForward)) {
+                        numberValue(this);
+                        break switch_loop;
+                    } else {
+                        if (!rest.hasNext() && stack.isEmpty()) {
+                            return;
+                        }
+                        throw new JsonSyntaxException("The token '" + lookForward + "' is illegal.");
+                    }
                 }
             }
         }
