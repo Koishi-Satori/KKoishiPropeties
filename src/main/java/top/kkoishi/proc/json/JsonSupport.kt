@@ -274,32 +274,32 @@ internal fun getStringIterator(content: String): Iterator<Char> {
 @Throws(java.lang.ClassCastException::class, NumberFormatException::class)
 @Suppress("UNCHECKED_CAST")
 internal fun <T> jsonTokenCast(token: JsonParser.Token): T {
-    return when (token.type) {
-        JsonParser.JsonType.STRING -> token.value as T
+    return when (token.type()) {
+        JsonParser.JsonType.STRING -> token.value() as T
         JsonParser.JsonType.NUMBER -> {
-            if (token.value.contains('.')) {
-                val decimal = BigDecimal(token.value)
-                if (token.value.elementAt(0) != '-') {
+            if (token.value()!!.contains('.')) {
+                val decimal = BigDecimal(token.value())
+                if (token.value()!!.elementAt(0) != '-') {
                     if (decimal > DOUBLE_MAX) decimal else decimal.toDouble()
                 } else {
                     if (decimal < DOUBLE_MIN) decimal else decimal.toDouble()
                 }
             } else {
-                val integer = BigInteger(token.value)
-                if (token.value.elementAt(0) != '-') {
+                val integer = BigInteger(token.value()!!)
+                if (token.value()!!.elementAt(0) != '-') {
                     if (integer > INT_MAX) {
-                        if (integer > LONG_MAX) integer else token.value.toLong()
-                    } else token.value.toInt()
+                        if (integer > LONG_MAX) integer else token.value()!!.toLong()
+                    } else token.value()!!.toInt()
                 } else {
                     if (integer < INT_MIN) {
-                        if (integer < LONG_MIN) integer else token.value.toLong()
-                    } else token.value.toInt()
+                        if (integer < LONG_MIN) integer else token.value()!!.toLong()
+                    } else token.value()!!.toInt()
                 }
             } as T
         }
         JsonParser.JsonType.BOOLEAN -> {
-            (token.value == "0") as T
+            (token.value() == "0") as T
         }
-        else -> throw ClassCastException("The token type ${token.type} cannot be force casted.")
+        else -> throw ClassCastException("The token type ${token.type()} cannot be force casted.")
     }
 }

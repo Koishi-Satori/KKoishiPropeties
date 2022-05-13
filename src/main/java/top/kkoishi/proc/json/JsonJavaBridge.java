@@ -350,7 +350,7 @@ public final class JsonJavaBridge {
         throw new IllegalArgumentException();
     }
 
-    public static <T> JsonObject cast (Class<T> clz, Object o)
+    public static <T> JsonObject cast2json (Class<T> clz, Object o)
             throws BuildFailedException, IllegalAccessException {
         if (clz.isInterface() || clz.isArray() || clz.isEnum()) {
             throw new BuildFailedException();

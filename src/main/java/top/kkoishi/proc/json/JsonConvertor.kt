@@ -42,9 +42,21 @@ internal val TYPE_MAP: Map<Class<*>, Type> = HashMap<Class<*>, Type>(48).apply {
     )
 }
 
-internal operator fun Token.component1(): Type = this.type
+internal operator fun Token.component1(): Type = this.type()
 
-internal operator fun Token.component2(): String? = this.value
+internal operator fun Token.component2(): String? = this.value()
+
+private var convertor: JsonConvertor? = null
+
+fun <T> cast(instance: T, clz: Class<T>): String {
+    if (convertor != null) {
+        convertor!!.reset(cast2json(clz, instance))
+    } else {
+        convertor = JsonConvertor(cast2json(clz, instance))
+    }
+    convertor!!.convert()
+    return convertor!!.result().toString()
+}
 
 class JsonJavaConvertException : LoaderException {
     constructor() : super()
@@ -138,7 +150,7 @@ open class JsonConvertor(jsonObject: JsonObject) {
         }
     }
 
-    protected fun convertArray () {
+    protected fun convertArray() {
         var mappingObject = false
         while (!tokens.isEmpty) {
             val (type, value) = tokens.remove()

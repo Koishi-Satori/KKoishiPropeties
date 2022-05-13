@@ -4,15 +4,12 @@ import top.kkoishi.proc.ini.INIPropertiesLoader;
 import top.kkoishi.proc.ini.Section;
 import top.kkoishi.proc.json.*;
 import top.kkoishi.proc.properties.JavaPropertiesLoader;
-import top.kkoishi.proc.property.BuildFailedException;
-import top.kkoishi.proc.property.Files;
-import top.kkoishi.proc.property.LoaderException;
-import top.kkoishi.proc.property.PropertiesLoader;
-import top.kkoishi.proc.property.TokenizeException;
+import top.kkoishi.proc.property.*;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
@@ -29,6 +26,17 @@ public final class Test {
         propertiesTest();
         //test json parser.
         jsonTest();
+        //test json properties
+        jsonPropertiesTest();
+    }
+
+    private static void jsonPropertiesTest () throws IOException, BuildFailedException, LoaderException, TokenizeException {
+        final ClassInstanceProperties<Node> nodeClassInstanceProperties = new JsonProperties<>(Node.class);
+        final InputStream in = new FileInputStream("./node.json");
+        nodeClassInstanceProperties.load(in);
+        in.close();
+        nodeClassInstanceProperties.parse();
+        System.out.println(nodeClassInstanceProperties.instance());
     }
 
     private static void iniTest () throws IOException, TokenizeException, BuildFailedException, LoaderException {
@@ -78,7 +86,7 @@ public final class Test {
             testNode.name = "head";
             testNode.value = new Object[]{null, 114514, 1919810L, 114514.1919810, new Node(), true};
             testNode.next = new Node();
-            final JsonObject jsonObject = JsonJavaBridge.cast(Node.class, testNode);
+            final JsonObject jsonObject = JsonJavaBridge.cast2json(Node.class, testNode);
             final var convertor = new JsonConvertor(jsonObject);
 //            test use.
 //            jsonConvertTest(convertor);

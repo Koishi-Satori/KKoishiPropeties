@@ -1,7 +1,10 @@
 package top.kkoishi.proc.json;
 
 import kotlin.collections.ArrayDeque;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import top.kkoishi.proc.property.BuildFailedException;
+import top.kkoishi.proc.property.Token;
 import top.kkoishi.proc.property.TokenizeException;
 
 import java.util.Iterator;
@@ -72,7 +75,8 @@ public class JsonParser {
      * The lexer in the parser will split the json
      * text to token list before translate to an AST.
      */
-    public static final class Token {
+    public static final class Token
+            implements top.kkoishi.proc.property.Token<JsonType> {
         /**
          * Construct a token instance.
          *
@@ -87,7 +91,9 @@ public class JsonParser {
         private JsonType type;
         private String value;
 
-        public JsonType getType () {
+        @Override
+        @NotNull
+        public JsonType type () {
             return type;
         }
 
@@ -95,7 +101,9 @@ public class JsonParser {
             this.type = type;
         }
 
-        public String getValue () {
+        @Nullable
+        @Override
+        public String value () {
             return value;
         }
 
