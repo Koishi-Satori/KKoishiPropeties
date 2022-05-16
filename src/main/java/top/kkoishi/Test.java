@@ -162,4 +162,11 @@ public final class Test {
                     '}';
         }
     }
+
+    @SuppressWarnings({"AlibabaClassNamingShouldBeCamel"})
+    public static final class TODOException extends RuntimeException {
+        public TODOException () {
+            super("Not implemented yet.");
+        }
+    }
 }

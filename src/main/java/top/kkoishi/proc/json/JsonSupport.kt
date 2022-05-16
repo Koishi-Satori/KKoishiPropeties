@@ -267,9 +267,7 @@ fun TargetClass.accessClass(): Array<Class<*>?> {
     return result
 }
 
-internal fun getStringIterator(content: String): Iterator<Char> {
-    return content.toCharArray().iterator()
-}
+internal fun getStringIterator(content: String): Iterator<Char> = content.toCharArray().iterator()
 
 @Throws(java.lang.ClassCastException::class, NumberFormatException::class)
 @Suppress("UNCHECKED_CAST")

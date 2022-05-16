@@ -4,7 +4,6 @@ import kotlin.collections.ArrayDeque;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import top.kkoishi.proc.property.BuildFailedException;
-import top.kkoishi.proc.property.Token;
 import top.kkoishi.proc.property.TokenizeException;
 
 import java.util.Iterator;
@@ -173,7 +172,6 @@ public class JsonParser {
                 elements[i] = null;
             }
             head = 0;
-
             elements = null;
         }
 
@@ -391,7 +389,7 @@ public class JsonParser {
         this.builder.build();
     }
 
-    @SuppressWarnings("all")
+    @SuppressWarnings("EnhancedSwitchMigration")
     protected final void jump () throws TokenizeException, BuildFailedException {
         if (!rest.hasNext() && stack.isEmpty()) {
             return;

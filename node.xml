@@ -1,0 +1,13 @@
+<?xxx?>
+<Node>
+    <!--This is an annotation-->
+    <name val="">head</name>
+    <value/>
+    <next>
+        <Node>
+            <name>tail</name>
+            <value>114514.1919810</value>
+            <next/>
+        </Node>
+    </next>
+</Node>
