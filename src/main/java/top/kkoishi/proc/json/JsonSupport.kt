@@ -245,6 +245,7 @@ class Entry(var key: String, var value: Any?) {
 
 /**
  * Mark how to decode json object to java class instance.
+ * And this is also used in top.kkoishi.proc.xml package.
  *
  * @param classNames the possible class names' list.
  */

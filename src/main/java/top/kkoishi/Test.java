@@ -151,7 +151,7 @@ public final class Test {
         @ArrayClass(classNames = "top.kkoishi.Test$Node")
         Object value;
         @TargetClass(classNames = "top.kkoishi.Test$Node")
-        Object next;
+        Node next;
 
         @Override
         public String toString () {

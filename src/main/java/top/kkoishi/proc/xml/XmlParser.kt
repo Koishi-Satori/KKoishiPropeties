@@ -1,7 +1,13 @@
 package top.kkoishi.proc.xml
 
+import top.kkoishi.proc.json.TargetClass
 import top.kkoishi.proc.property.BuildFailedException
 import top.kkoishi.proc.property.TokenizeException
+
+/**
+ * This annotation in top.kkoishi.proc.json has the same function here.
+ */
+typealias XmlTargetClass = TargetClass
 
 fun StringBuilder.deleteReverse(start: Int, end: Int): StringBuilder {
     val len = this.length - 1
