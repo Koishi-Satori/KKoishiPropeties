@@ -1,7 +1,7 @@
 <?xxx?>
 <Node>
     <!--This is an annotation-->
-    <name val="">head</name>
+    <name>head</name>
     <value/>
     <next>
         <Node>
