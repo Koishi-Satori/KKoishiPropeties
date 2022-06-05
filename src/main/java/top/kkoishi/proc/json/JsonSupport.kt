@@ -161,7 +161,12 @@ internal fun JsonParser.numberValue() {
     if (!rest.hasNext() && stack.isEmpty()) return
     while (true) {
         when (this.lookForward) {
-            ',', '{', '[', ' ', '\n', '\r', '\t' -> break
+            ',', '{', '[', ' ', '\n', '\r', '\t', '}', ']' -> {
+                this.builder.tokens.add(JsonParser.Token(JsonParser.JsonType.NUMBER, this.buf.toString()))
+                this.buf.clear()
+                this.jump()
+                return
+            }
             else -> {
                 if (NUMBER_MAP.contains(lookForward)) {
                     this.buf.append(lookForward)
@@ -170,9 +175,6 @@ internal fun JsonParser.numberValue() {
         }
         lookForward()
     }
-    this.builder.tokens.add(JsonParser.Token(JsonParser.JsonType.NUMBER, this.buf.toString()))
-    this.buf.clear()
-    this.jump()
 }
 
 @Throws(JsonSyntaxException::class)
@@ -189,9 +191,15 @@ internal fun JsonParser.sep() {
             this.builder.tokens.add(JsonParser.Token(JsonParser.JsonType.SEP_COMMA, null))
             this.sep()
         }
-        ' ', '\r', '\n', '\t', '{', '[' -> {
+        ' ', '\r', '\n', '\t' -> {
             this.lookForward()
             this.jump()
+        }
+        '{' -> {
+            this.block()
+        }
+        '[' -> {
+            this.array()
         }
         't', 'f' -> {
             this.buf.clear()

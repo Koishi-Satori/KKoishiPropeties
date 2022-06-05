@@ -1,6 +1,5 @@
 package top.kkoishi.proc.xml.convert;
 
-import org.jetbrains.annotations.NotNull;
 import sun.misc.Unsafe;
 import top.kkoishi.Test;
 import top.kkoishi.proc.json.TargetClass;
@@ -34,6 +33,10 @@ public final class XmlJavaBridge {
             e.printStackTrace();
             throw new RuntimeException("Can not access sun.misc.Unsafe.class");
         }
+    }
+
+    public static void main (String[] args) {
+        System.out.println();
     }
 
     private static Unsafe accessUnsafe () throws NoSuchFieldException, IllegalAccessException {

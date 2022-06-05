@@ -25,6 +25,24 @@ public final class JsonObject {
         this.data = data;
     }
 
+    public Pair<String, Object> get (int index) {
+        return data.get(index);
+    }
+
+    public Pair<String, Object> set (int index, Pair<String, Object> nValue) {
+        final var oValue = data.get(index);
+        data.set(index, nValue);
+        return oValue;
+    }
+
+    public Pair<String, Object> set (int index, String key, Object value) {
+        return set(index, new Pair<>(key, value));
+    }
+
+    public ArrayList<Pair<String, Object>> getData () {
+        return data;
+    }
+
     @SuppressWarnings({"unchecked", "unused"})
     public static <T> T cast (Class<T> clz, JsonObject jsonObject)
             throws InstantiationException, NoSuchFieldException, IllegalAccessException {
@@ -40,7 +58,7 @@ public final class JsonObject {
     @Override
     public String toString () {
         final StringBuilder sb = new StringBuilder("JsonObject{");
-        if (!data.isEmpty()){
+        if (!data.isEmpty()) {
             final int size = data.size() - 1;
             for (int i = 0; i < size; i++) {
                 final var datum = data.get(i);
