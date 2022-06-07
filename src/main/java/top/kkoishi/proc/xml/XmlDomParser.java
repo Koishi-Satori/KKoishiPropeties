@@ -104,7 +104,7 @@ public class XmlDomParser extends XmlParser<XmlDocTree> {
                         clearBuf();
                     }
                     jump();
-                    break;
+                    return;
                 }
                 default: {
                     appendChar(lookForward);

@@ -40,7 +40,7 @@ abstract class XmlParser<T>(protected var rest: Iterator<Char>) {
 
     abstract fun build(): T
 
-    protected fun lookForward() = this.rest.next()
+    protected open fun lookForward() = this.rest.next()
 
     protected fun hasMore() = this.rest.hasNext()
 

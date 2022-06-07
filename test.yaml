@@ -1,0 +1,12 @@
+Class:
+  top.kkoishi.Test$Node
+value:
+  {
+    name:fuckLzu,
+    value:null,
+    next:
+      {
+        Class:
+          
+      }
+  }
