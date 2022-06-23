@@ -2,13 +2,7 @@ package top.kkoishi.proc.xml;
 
 import org.jetbrains.annotations.NotNull;
 import top.kkoishi.proc.property.BuildFailedException;
-import top.kkoishi.proc.xml.dom.AbstractXmlNode;
-import top.kkoishi.proc.xml.dom.XmlComment;
-import top.kkoishi.proc.xml.dom.XmlDocTree;
-import top.kkoishi.proc.xml.dom.XmlDomKt;
-import top.kkoishi.proc.xml.dom.XmlElementInfoDesc;
-import top.kkoishi.proc.xml.dom.XmlLeafNode;
-import top.kkoishi.proc.xml.dom.XmlNodeImpl;
+import top.kkoishi.proc.xml.dom.*;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -148,7 +142,16 @@ public class XmlDomParser extends XmlParser<XmlDocTree> {
                 jump();
                 return;
             } else {
-                appendChar(lookForward);
+                switch (lookForward) {
+                    case '\r', '\n', '\t': {
+                        appendChar(' ');
+                        break;
+                    }
+                    default: {
+                        appendChar(lookForward);
+                        break;
+                    }
+                }
             }
         }
     }
@@ -306,7 +309,9 @@ public class XmlDomParser extends XmlParser<XmlDocTree> {
     public void parse () throws XmlSyntaxException, BuildFailedException {
         this.lookForward = super.lookForward();
         jump();
-        this.dom = parseTokens();
+        final var xmlDom = new XmlDom(getTokens());
+        xmlDom.build();
+        this.dom = xmlDom.dom();
     }
 
     @Override

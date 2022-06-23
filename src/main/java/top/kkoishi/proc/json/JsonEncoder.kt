@@ -11,6 +11,8 @@ import kotlin.reflect.KClass
 
 private val basicTypeMap: HashMap<out Any, JavaType> = initBasicTypeMap()
 
+internal fun <T> isBasicType(clz: Class<T>) = basicTypeMap.containsKey(clz)
+
 private fun initBasicTypeMap(): HashMap<Class<*>, JavaType> {
     val map: HashMap<Class<*>, JavaType> = HashMap(28)
     map[Int::class.java] = JavaType.INT
@@ -24,6 +26,26 @@ private fun initBasicTypeMap(): HashMap<Class<*>, JavaType> {
     return map
 }
 
+data class BasicTypeWrapper(val className: String, val value: Any?)
+
+data class ArrayWrapper(val className: String, val array: Array<*>) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is ArrayWrapper) return false
+
+        if (className != other.className) return false
+        if (!array.contentEquals(other.array)) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = className.hashCode()
+        result = 31 * result + array.contentHashCode()
+        return result
+    }
+}
+
 @Throws(IllegalAccessException::class)
 private fun tryGetField(f: Field, o: Any, oClz: Class<*>): Any? =
     if (BASIC_TYPES.contains(oClz)) f.get(o) else {
@@ -33,8 +55,12 @@ private fun tryGetField(f: Field, o: Any, oClz: Class<*>): Any? =
         } else if (fo != null) castImpl(oClz, fo) else null
     }
 
+internal fun <T> castMappedImpl(clz: Class<T>, o: Any) = castImpl<T, MappedJsonObject>(clz, o)
+
+internal fun <T> castCommonImpl(clz: Class<T>, o: Any) = castImpl<T, JsonObject>(clz, o)
+
 @Throws(IllegalAccessException::class)
-internal fun <T> castImpl(clz: Class<T>, o: Any): JsonObject {
+internal inline fun <T, reified R> castImpl(clz: Class<T>, o: Any): R {
     val fields = getFields(clz)
     val jsonObject = JsonObject(fields.size)
     while (!fields.isEmpty()) {
@@ -50,7 +76,15 @@ internal fun <T> castImpl(clz: Class<T>, o: Any): JsonObject {
             }
         }
     }
-    return jsonObject
+    return when (R::class) {
+        MappedJsonObject::class -> {
+            MappedJsonObject.cast(jsonObject, HashMap::class.java) as R
+        }
+        JsonObject::class -> jsonObject as R
+        else -> {
+            throw UnsupportedOperationException()
+        }
+    }
 }
 
 private fun castArray(array: Array<*>): Array<Any?> {

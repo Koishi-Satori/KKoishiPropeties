@@ -2,6 +2,7 @@
 
 package top.kkoishi.proc.xml.dom
 
+import com.sun.jdi.InvalidTypeException
 import top.kkoishi.proc.xml.XmlParser
 import top.kkoishi.proc.xml.XmlSyntaxException
 
@@ -42,7 +43,7 @@ internal class XmlDom(private val tokens: XmlParser.TokenList) {
 //fun main() = println(getElementContent("xml version=\"1.0\""))
 
 @Throws(XmlSyntaxException::class)
-public fun getElementContent(elementContent: String): XmlElementInfoDesc {
+fun getElementContent(elementContent: String): XmlElementInfoDesc {
     val firstSpace = elementContent.indexOf(' ')
     if (firstSpace == -1) {
         return XmlElementInfoDesc(elementContent)
@@ -69,7 +70,7 @@ public fun getElementContent(elementContent: String): XmlElementInfoDesc {
                 if (indexValue) {
                     if (index != -1) {
                         indexValue = false
-                        docDesc.entries.addLast(Entry(keyTemp.toString(), elementContent.substring(index, pos)))
+                        docDesc.entries.addLast(keyTemp.toString() entry elementContent.substring(index, pos))
                         index = -1
                         keyTemp.clear()
                     } else {
@@ -96,6 +97,8 @@ internal fun XmlElementInfoDesc.cast(): XmlDocInfoDesc {
     return info
 }
 
+infix fun String.entry(value: String) = Entry(this, value)
+
 data class Entry(var key: String, var value: String)
 
 data class XmlElementInfoDesc(var title: String) {
@@ -104,7 +107,6 @@ data class XmlElementInfoDesc(var title: String) {
     override fun toString(): String {
         return "XmlElementInfoDesc(title='$title', entries=$entries)"
     }
-
 }
 
 data class XmlDocInfoDesc(var elementName: String) {
@@ -122,6 +124,10 @@ sealed class AbstractXmlNode(protected var value: Any?) {
     abstract fun hasChildren(): Boolean
 
     fun value() = this.value
+
+    fun setVal(nValue: Any?) {
+        value = nValue
+    }
 
     override fun toString(): String {
         return "AbstractXmlNode(value=$value)"
@@ -149,4 +155,59 @@ class XmlNodeImpl(value: Any?) : AbstractXmlNode(value) {
 
 }
 
-data class XmlDocTree(val root: XmlNodeImpl = XmlNodeImpl(null))
+data class XmlDocTree(val root: XmlNodeImpl = XmlNodeImpl(null)) {
+    fun toXml(
+        buf: StringBuilder = StringBuilder(),
+        comment: String? = null,
+        info: String = "xml version=\"1.0\" encoding=\"UTF-8\"",
+    ): String {
+        buf.append(info).append(if (comment == null) "" else "<!--$comment-->")
+        toXml(buf, root)
+        return buf.toString()
+    }
+
+    companion object {
+        @JvmStatic
+        internal fun toXml(buf: StringBuilder, node: AbstractXmlNode) {
+            if (node.hasChildren()) {
+                val cpy = node as XmlNodeImpl
+                val value = cpy.value()!!
+                if (value is XmlElementInfoDesc) {
+                    buf.append("<").append(value.title)
+                    for (entry in value.entries) {
+                        buf.append(' ').append(entry.key).append("=\"").append(entry.value).append('"')
+                    }
+                    buf.append("/>\n")
+                    cpy.children.forEach { toXml(buf, it) }
+                }
+                throw InvalidTypeException("The type ${value.javaClass} of object@${value.hashCode()} is illegal for this class.")
+            } else {
+                when (val value = (node as XmlLeafNode).value()!!) {
+                    is String -> {
+                        buf.append(value)
+                    }
+                    is XmlComment -> {
+                        buf.append("<--").append(value.comment).append("-->\n")
+                    }
+                    is XmlElementInfoDesc -> {
+                        buf.append("<").append(value.title)
+                        for (entry in value.entries) {
+                            buf.append(' ').append(entry.key).append("=\"").append(entry.value).append('"')
+                        }
+                        buf.append("/>")
+                    }
+                    is XmlDocInfoDesc -> {
+                        buf.append("<?").append(value.elementName)
+                        for (entry in value.entries) {
+                            buf.append(' ').append(entry.key).append("=\"").append(entry.value).append('"')
+                        }
+                        buf.append("?>")
+                    }
+                    else -> {
+                        throw InvalidTypeException("The type ${value.javaClass} of object@${value.hashCode()} is illegal for this class.")
+                    }
+                }
+            }
+        }
+    }
+}

@@ -2,9 +2,23 @@ package top.kkoishi;
 
 import top.kkoishi.proc.ini.INIPropertiesLoader;
 import top.kkoishi.proc.ini.Section;
-import top.kkoishi.proc.json.*;
+import top.kkoishi.proc.json.ArrayClass;
+import top.kkoishi.proc.json.JsonConvertor;
+import top.kkoishi.proc.json.JsonJavaBridge;
+import top.kkoishi.proc.json.JsonObject;
+import top.kkoishi.proc.json.JsonParser;
+import top.kkoishi.proc.json.JsonProperties;
+import top.kkoishi.proc.json.JsonSyntaxException;
+import top.kkoishi.proc.json.MappedJsonObject;
+import top.kkoishi.proc.json.TargetClass;
 import top.kkoishi.proc.properties.JavaPropertiesLoader;
-import top.kkoishi.proc.property.*;
+import top.kkoishi.proc.property.BuildFailedException;
+import top.kkoishi.proc.property.ClassInstanceProperties;
+import top.kkoishi.proc.property.Files;
+import top.kkoishi.proc.property.LoaderException;
+import top.kkoishi.proc.property.PropertiesLoader;
+import top.kkoishi.proc.property.TokenizeException;
+import top.kkoishi.proc.xml.XmlDomParser;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -19,7 +33,10 @@ import java.util.HashMap;
  * @author KKoishi_
  */
 public final class Test {
-    public static void main (String[] args) throws TokenizeException, BuildFailedException, LoaderException, IOException, NoSuchFieldException, InvocationTargetException, InstantiationException, IllegalAccessException, NoSuchMethodException {
+    public static void main (String[] args)
+            throws TokenizeException, BuildFailedException, LoaderException,
+            IOException, NoSuchFieldException, InvocationTargetException,
+            InstantiationException, IllegalAccessException, NoSuchMethodException {
         //test ini loader.
         //iniTest();
         //test java loader.
@@ -29,7 +46,11 @@ public final class Test {
         //test json properties
         //jsonPropertiesTest();
 
-        jsonConvertTest();
+//        jsonConvertTest();
+        //test xml.
+        final var xmlParser = new XmlDomParser(Files.fopen(new File("./pom.xml"), StandardCharsets.UTF_8));
+        xmlParser.parse();
+        System.out.println(xmlParser.build());
     }
 
     private static void jsonPropertiesTest () throws IOException, BuildFailedException, LoaderException, TokenizeException {

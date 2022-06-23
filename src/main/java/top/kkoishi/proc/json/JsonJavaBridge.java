@@ -36,10 +36,14 @@ public final class JsonJavaBridge {
      * <b><h3>But please make sure the key is name of field and
      * the value must be correct type!</h1></b>
      *
-     * @param clz class of java object
+     * @param clz        class of java object
      * @param jsonObject instance of JsonObject
-     * @param <T> type
+     * @param <T>        type
      * @return instance of java object
+     * @throws BuildFailedException   when failed to build instance
+     * @throws InstantiationException thrown by sun.misc.Unsafe, if failed to allocate instance.
+     * @throws NoSuchFieldException   if the field does not exist.
+     * @throws IllegalAccessException if it can not access the field.
      * @see TargetClass
      * @see Unsafe#allocateInstance(Class)
      * @see Unsafe#objectFieldOffset(Field)
@@ -49,10 +53,6 @@ public final class JsonJavaBridge {
      * @see Unsafe
      * @see JsonJavaBridge#sharedUnsafe
      * @see JsonSupportKt#jsonTokenCast(JsonParser.Token)
-     * @throws BuildFailedException when failed to build instance
-     * @throws InstantiationException thrown by sun.misc.Unsafe, if failed to allocate instance.
-     * @throws NoSuchFieldException if the field does not exist.
-     * @throws IllegalAccessException if it can not access the field.
      */
     @SuppressWarnings("unchecked")
     public static <T> T cast (Class<T> clz, MappedJsonObject jsonObject)
@@ -116,7 +116,7 @@ public final class JsonJavaBridge {
      * Different from {@link Class#getDeclaredField(String) Class::getDeclaredField},
      * this method will get the fields belong to the class's superclass.
      *
-     * @param clz class.
+     * @param clz  class.
      * @param name field name.
      * @return field instance.
      * @throws NoSuchFieldException if there is no such field.
@@ -350,11 +350,25 @@ public final class JsonJavaBridge {
         throw new IllegalArgumentException();
     }
 
+    public static <T> MappedJsonObject cast2mappedJson (Class<T> clz, Object o)
+            throws BuildFailedException, IllegalAccessException {
+        if (clz.isInterface() || clz.isEnum()) {
+            throw new BuildFailedException();
+        } else if (clz.isArray()) {
+            return JsonEncoderKt.castMappedImpl(ArrayWrapper.class, new ArrayWrapper(clz.getName(), (Object[]) o));
+        } else if (JsonEncoderKt.isBasicType(clz)) {
+
+        }
+        return JsonEncoderKt.castMappedImpl(clz, o);
+    }
+
     public static <T> JsonObject cast2json (Class<T> clz, Object o)
             throws BuildFailedException, IllegalAccessException {
-        if (clz.isInterface() || clz.isArray() || clz.isEnum()) {
+        if (clz.isInterface() || clz.isEnum()) {
             throw new BuildFailedException();
+        } else if (clz.isArray()) {
+            return JsonEncoderKt.castCommonImpl(ArrayWrapper.class, new ArrayWrapper(clz.getName(), (Object[]) o));
         }
-        return JsonEncoderKt.castImpl(clz, o);
+        return JsonEncoderKt.castCommonImpl(clz, o);
     }
 }

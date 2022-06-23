@@ -55,6 +55,10 @@ public record MappedJsonObject(Map<String, Object> data) {
         return mjo;
     }
 
+    public void set (String key, Object value) {
+        data.replace(key, value);
+    }
+
     public Object get (String key) {
         return data.get(key);
     }
